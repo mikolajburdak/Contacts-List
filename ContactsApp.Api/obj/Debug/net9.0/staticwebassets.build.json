@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "Yv41izm+vJ3pNtkE82vYgl/2eYTTU4z1hVGzqEZI+c0=",
+  "Source": "ContactsApp.Api",
+  "BasePath": "_content/ContactsApp.Api",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}
