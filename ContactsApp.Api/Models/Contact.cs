@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ContactsApp.Api.Models
 {
@@ -31,7 +30,7 @@ namespace ContactsApp.Api.Models
         public Subcategory Subcategory { get; set; }
 
         [Required]
-        public int UserId { get; set; }
-        public User User { get; set; }
+        public string UserId { get; set; } = string.Empty;
+        public ApplicationUser User { get; set; } = null!;
     }
 }
