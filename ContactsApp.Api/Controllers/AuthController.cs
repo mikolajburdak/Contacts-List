@@ -45,7 +45,6 @@ public class AuthController : ControllerBase
     [HttpGet("test")]
     public IActionResult TestAuth()
     {
-        // Wyświetlenie wszystkich claimów - pomocne w diagnostyce
         var claims = User.Claims.Select(c => new { c.Type, c.Value }).ToList();
         
         var userId = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
