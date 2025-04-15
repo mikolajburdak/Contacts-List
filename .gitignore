@@ -1,0 +1,61 @@
+# React/TypeScript frontend
+# dependencies
+/ContactsApp.Client/node_modules
+/ContactsApp.Client/.pnp
+/ContactsApp.Client/.pnp.js
+
+# testing
+/ContactsApp.Client/coverage
+
+# production
+/ContactsApp.Client/build
+/ContactsApp.Client/dist
+
+# misc
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# .NET/C# backend
+## .NET Core
+/ContactsApp.Api/bin/
+/ContactsApp.Api/obj/
+*.dll
+*.pdb
+*.exe
+*.userprefs
+*.usertasks
+*.usercache
+*.vspscc
+*.vssscc
+.vs/
+.vscode/
+**/obj/
+**/bin/
+**/*.user
+**/*.dbmdl
+**/*.jfm
+
+# SQLite database
+*.db-shm
+*.db-wal
+
+# IDE-specific files
+.idea/
+*.iml
+*.iws
+*.ipr
+*.suo
+*.sln.docstates
+.DS_Store
+.vscode/
+
+# Logs
+logs/
+*.log 
