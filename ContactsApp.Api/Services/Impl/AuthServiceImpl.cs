@@ -54,9 +54,9 @@ public class AuthServiceImpl : IAuthService
             new Claim(JwtRegisteredClaimNames.Sub, user.UserName 
                                                    ?? throw new InvalidOperationException("UserName is null")),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            
-            // Dodajemy identyfikator użytkownika zgodnie z ClaimTypes.NameIdentifier
-            new Claim(ClaimTypes.NameIdentifier, user.Id)
+
+            // ✅ Użycie odpowiedniego URI dla NameIdentifier
+            new Claim("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier", user.Id)
         };
 
         var key = _configuration["Jwt:Key"];

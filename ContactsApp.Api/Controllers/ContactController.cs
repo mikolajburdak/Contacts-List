@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ContactsApp.Api.Controllers;
 
-[Authorize]
+//[Authorize]
 [ApiController] 
 [Route("api/contact")]
 public class ContactController : ControllerBase
@@ -20,27 +20,19 @@ public class ContactController : ControllerBase
     }
     
     [HttpPost]
-    public async Task<ActionResult<ContactDto>> CreateContact([FromBody] CreateContactDto dto)
-    {
-        // Właściwy format tokena to "Bearer {token}"
-        var authHeader = Request.Headers["Authorization"].ToString();
-        Console.WriteLine($"[DEBUG] Authorization Header: {authHeader}");
-        
-        // Sprawdzamy czy token jest w prawidłowym formacie
-        if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer "))
-        {
-            Console.WriteLine("[DEBUG] Invalid token format or missing token");
-            return Unauthorized();
-        }
+public async Task<ActionResult<ContactDto>> CreateContact([FromBody] CreateContactDto dto)
+{
+    var token = Request.Headers["Authorization"].ToString();
+    Console.WriteLine($"[DEBUG] Token received: {token}");
 
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        Console.WriteLine($"[DEBUG] USER ID: {userId}");
+    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    Console.WriteLine($"[DEBUG] USER ID: {userId}"); // 👈 Dodaj logowanie claimu
 
-        if (userId == null) return Unauthorized();
+    if (userId == null) return Unauthorized();
 
-        var contact = await _contactService.CreateContactAsync(dto, userId);
-        return CreatedAtAction(nameof(GetContact), new { id = contact.Id }, contact);
-    }
+    var contact = await _contactService.CreateContactAsync(dto, userId);
+    return CreatedAtAction(nameof(GetContact), new { id = contact.Id }, contact);
+}
     
     [HttpPatch("{id}")]
     public async Task<IActionResult> PartialUpdateContact(int id, [FromBody] ContactUpdateRequestDto dto)
@@ -63,13 +55,6 @@ public class ContactController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<Contact>> GetContact(int id)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (userId == null)
-        {
-            Console.WriteLine("[DEBUG] GetContact: No userId found in claims");
-            return Unauthorized();
-        }
-        
         var contact = await _contactService.GetContactByIdAsync(id);
         if (contact == null)
         {
@@ -109,13 +94,6 @@ public class ContactController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<ActionResult> DeleteContact(int id)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (userId == null)
-        {
-            Console.WriteLine("[DEBUG] DeleteContact: No userId found in claims");
-            return Unauthorized();
-        }
-        
         await _contactService.DeleteContactAsync(id);
         return NoContent();
     }

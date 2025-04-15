@@ -1,56 +1,6 @@
-@baseUrl = http://localhost:5041/api
-@token = eyJhbGci...YOUR_JWT_TOKEN_HERE
+@ContactsApp.Api_HostAddress = http://localhost:5041
 
-### Rejestracja nowego użytkownika
-POST {{baseUrl}}/auth/register
-Content-Type: application/json
+GET {{ContactsApp.Api_HostAddress}}/weatherforecast/
+Accept: application/json
 
-{
-  "fullName": "Jan Kowalski",
-  "email": "jan@example.com",
-  "password": "StrongPassword123!"
-}
-
-### Logowanie i pobranie tokena JWT
-# Po pomyślnym logowaniu skopiuj token z odpowiedzi i wklej go do zmiennej @token powyżej
-POST {{baseUrl}}/auth/login
-Content-Type: application/json
-
-{
-  "email": "jan@example.com",
-  "password": "StrongPassword123!"
-}
-
-### Pobranie wszystkich kontaktów (bez autoryzacji)
-GET {{baseUrl}}/contact
-
-### Pobranie pojedynczego kontaktu (z autoryzacją)
-GET {{baseUrl}}/contact/1
-Authorization: Bearer {{token}}
-
-### Dodanie nowego kontaktu (z autoryzacją)
-POST {{baseUrl}}/contact
-Content-Type: application/json
-Authorization: Bearer {{token}}
-
-{
-  "name": "Anna Nowak",
-  "email": "anna@example.com",
-  "phone": "123456789",
-  "category": "Friend",
-  "dateOfBirth": "1990-01-01"
-}
-
-### Aktualizacja kontaktu (z autoryzacją)
-PATCH {{baseUrl}}/contact/1
-Content-Type: application/json
-Authorization: Bearer {{token}}
-
-{
-  "name": "Anna Nowak-Smith",
-  "category": "Family"
-}
-
-### Usunięcie kontaktu (z autoryzacją)
-DELETE {{baseUrl}}/contact/1
-Authorization: Bearer {{token}}
+###
