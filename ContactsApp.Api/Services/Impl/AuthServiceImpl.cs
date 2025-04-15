@@ -51,13 +51,22 @@ public class AuthServiceImpl : IAuthService
     {
         var claims = new[]
         {
-            new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
+            new Claim(JwtRegisteredClaimNames.Sub, user.UserName 
+                                                   ?? throw new InvalidOperationException("UserName is null")),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new Claim("userId", user.Id)
+            
+            // Dodajemy identyfikator użytkownika zgodnie z ClaimTypes.NameIdentifier
+            new Claim(ClaimTypes.NameIdentifier, user.Id)
         };
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Key"]));
-        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        var key = _configuration["Jwt:Key"];
+        if (string.IsNullOrEmpty(key))
+        {
+            throw new InvalidOperationException("JWT key is not configured.");
+        }
+
+        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
+        var creds = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
             _configuration["Jwt:Issuer"],
@@ -66,9 +75,8 @@ public class AuthServiceImpl : IAuthService
             expires: DateTime.UtcNow.AddDays(1),
             signingCredentials: creds
         );
-        
-        return new JwtSecurityTokenHandler().WriteToken(token);
 
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
-    
+
 }
