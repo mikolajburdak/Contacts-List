@@ -56,7 +56,7 @@ public static class ContactMapper
             PhoneNumber = contact.PhoneNumber,
             BirthDate = contact.BirthDate,
             CategoryId = contact.CategoryId,
-            SubcategoryId = contact.SubcategoryId,
+            SubcategoryId = contact.SubcategoryId ?? 0,
         };
     }
 

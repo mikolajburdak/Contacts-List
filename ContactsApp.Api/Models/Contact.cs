@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace ContactsApp.Api.Models
 {
@@ -20,17 +21,25 @@ namespace ContactsApp.Api.Models
         public string PhoneNumber { get; set; }
 
         public DateTime BirthDate { get; set; }
+        
+        public DateTime CreatedAt { get; set; }
 
         [Required]
         public int CategoryId { get; set; }
+        
+        [JsonIgnore]
         public Category Category { get; set; }
 
         [Required]
-        public int SubcategoryId { get; set; }
+        public int? SubcategoryId { get; set; }
+        
+        [JsonIgnore]
         public Subcategory Subcategory { get; set; }
 
         [Required]
         public string UserId { get; set; } = string.Empty;
+        
+        [JsonIgnore]
         public ApplicationUser User { get; set; } = null!;
     }
 }

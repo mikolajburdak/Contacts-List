@@ -1,5 +1,6 @@
 using ContactsApp.Api.Data;
 using ContactsApp.Api.Models;
+using ContactsApp.Api.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace ContactsApp.Api.Repositories.Impl;
@@ -29,16 +30,63 @@ public class ContactRepositoryImpl : IContactRepository
 
     public async Task<Contact?> GetContactByIdAsync(int id)
     {
-        return await _context.Contacts
-            .Include(c => c.Category)       // jeśli chcesz ładować relacje
-            .Include(c => c.Subcategory)
-            .FirstOrDefaultAsync(c => c.Id == id);
+        try
+        {
+            var contact = await _context.Contacts
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            if (contact == null)
+                return null;
+
+            try
+            {
+                contact.Category = await _context.Categories
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(c => c.Id == contact.CategoryId);
+                
+                contact.Subcategory = await _context.Subcategories
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(s => s.Id == contact.SubcategoryId);
+            }
+            catch
+            {
+            }
+
+            return contact;
+        }
+        catch (Exception ex)
+        {
+            throw;
+        }
     }
 
-    public async Task CreateContactAsync(Contact contact)
+    public async Task<Contact> CreateContactAsync(Contact contact)
     {
+        var categoryExists = await _context.Categories.AnyAsync(c => c.Id == contact.CategoryId);
+        if (!categoryExists)
+        {
+            throw new InvalidOperationException($"Category with ID {contact.CategoryId} does not exist.");
+        }
+
+        if (contact.SubcategoryId.HasValue)
+        {
+            var subcategoryExists = await _context.Subcategories.AnyAsync(c => c.Id == contact.SubcategoryId);
+            if (!subcategoryExists)
+            {
+                throw new InvalidOperationException($"Subcategory with ID {contact.SubcategoryId} does not exist.");
+            }
+        }
+
+        var userExists = await _context.Users.AnyAsync(u => u.Id == contact.UserId);
+        if (!userExists)
+        {
+            throw new InvalidOperationException($"User with ID {contact.UserId} does not exist.");
+        }
+
         _context.Contacts.Add(contact);
         await _context.SaveChangesAsync();
+        return contact;
     }
 
     public async Task UpdateContactAsync(Contact contact)

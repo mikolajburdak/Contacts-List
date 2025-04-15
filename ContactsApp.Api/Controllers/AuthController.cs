@@ -1,6 +1,8 @@
 using ContactsApp.Api.DTO;
 using ContactsApp.Api.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace ContactsApp.Api.Controllers;
 
@@ -37,5 +39,22 @@ public class AuthController : ControllerBase
         }
         
         return Ok(new { token });
+    }
+    
+    [Authorize]
+    [HttpGet("test")]
+    public IActionResult TestAuth()
+    {
+        // Wyświetlenie wszystkich claimów - pomocne w diagnostyce
+        var claims = User.Claims.Select(c => new { c.Type, c.Value }).ToList();
+        
+        var userId = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+        
+        return Ok(new 
+        { 
+            message = "Authorized successfully!", 
+            userId,
+            claims
+        });
     }
 }

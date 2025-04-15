@@ -11,15 +11,19 @@ namespace ContactsApp.Api.Services.Impl;
 
 public class AuthServiceImpl : IAuthService
 {
+    private const string NameIdentifierClaimUri = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier";
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly IConfiguration _configuration;
 
-    public AuthServiceImpl(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IConfiguration configuration)
+    public AuthServiceImpl(
+        UserManager<ApplicationUser> userManager, 
+        SignInManager<ApplicationUser> signInManager, 
+        IConfiguration configuration)
     {
-        _userManager = userManager;
-        _signInManager = signInManager;
-        _configuration = configuration;
+        _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
+        _signInManager = signInManager ?? throw new ArgumentNullException(nameof(signInManager));
+        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
     }
 
     public async Task<IdentityResult> RegisterAsync(RegisterDto model)
@@ -32,7 +36,6 @@ public class AuthServiceImpl : IAuthService
         };
         
         return await _userManager.CreateAsync(user, model.Password);
-        
     }
 
     public async Task<string?> LoginAsync(LoginDto model)
@@ -44,20 +47,20 @@ public class AuthServiceImpl : IAuthService
         }
         
         return GenerateJwtToken(user);
-        
     }
 
     private string GenerateJwtToken(ApplicationUser user)
     {
-        var claims = new[]
+        var claims = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.UserName 
-                                                   ?? throw new InvalidOperationException("UserName is null")),
+                                                  ?? throw new InvalidOperationException("UserName is null")),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-
-            // ✅ Użycie odpowiedniego URI dla NameIdentifier
-            new Claim("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier", user.Id)
+            new Claim(ClaimTypes.NameIdentifier, user.Id)
         };
+
+        Console.WriteLine($"[AUTH DEBUG] Creating token for user: {user.Id}, username: {user.UserName}");
+        Console.WriteLine($"[AUTH DEBUG] Added claim {ClaimTypes.NameIdentifier}: {user.Id}");
 
         var key = _configuration["Jwt:Key"];
         if (string.IsNullOrEmpty(key))
@@ -69,14 +72,13 @@ public class AuthServiceImpl : IAuthService
         var creds = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
-            _configuration["Jwt:Issuer"],
-            _configuration["Jwt:Audience"],
-            claims,
+            issuer: _configuration["Jwt:Issuer"],
+            audience: _configuration["Jwt:Audience"],
+            claims: claims,
             expires: DateTime.UtcNow.AddDays(1),
             signingCredentials: creds
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
-
 }
