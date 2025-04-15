@@ -42,10 +42,10 @@ const EditContact: React.FC = () => {
           subcategoryId: contactData.subcategoryId
         });
         
-        // Użyj stałych kategorii zamiast pobierania z API
+        // Use constant categories instead of fetching from API
         setCategories(CATEGORIES);
         
-        // Pobierz podkategorie dla wybranej kategorii
+        // Use constant categories instead of fetching from API
         const filteredSubs = getSubcategoriesForCategory(contactData.categoryId);
         setFilteredSubcategories(filteredSubs);
         setSubcategories(BUSINESS_SUBCATEGORIES);
