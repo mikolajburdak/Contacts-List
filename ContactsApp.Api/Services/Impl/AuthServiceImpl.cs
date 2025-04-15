@@ -53,14 +53,19 @@ public class AuthServiceImpl : IAuthService
     {
         var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, user.UserName 
-                                                  ?? throw new InvalidOperationException("UserName is null")),
+            new Claim(JwtRegisteredClaimNames.Sub, user.Id),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new Claim(ClaimTypes.NameIdentifier, user.Id)
+            new Claim(ClaimTypes.NameIdentifier, user.Id),
+            new Claim(ClaimTypes.Email, user.Email ?? ""),
+            new Claim("uid", user.Id)
         };
 
         Console.WriteLine($"[AUTH DEBUG] Creating token for user: {user.Id}, username: {user.UserName}");
-        Console.WriteLine($"[AUTH DEBUG] Added claim {ClaimTypes.NameIdentifier}: {user.Id}");
+        Console.WriteLine($"[AUTH DEBUG] All claims:");
+        foreach (var claim in claims)
+        {
+            Console.WriteLine($"  {claim.Type}: {claim.Value}");
+        }
 
         var key = _configuration["Jwt:Key"];
         if (string.IsNullOrEmpty(key))

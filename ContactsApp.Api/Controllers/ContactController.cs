@@ -5,6 +5,7 @@ using ContactsApp.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json.Serialization;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace ContactsApp.Api.Controllers;
 
@@ -106,11 +107,65 @@ public class ContactController : ControllerBase
     
     private string? FindUserId()
     {
+        // Wypisz wszystkie claims do debugowania
+        Console.WriteLine("--- DEBUG: JWT Claims ---");
+        foreach (var claim in User.Claims)
+        {
+            Console.WriteLine($"Claim: {claim.Type} = {claim.Value}");
+        }
+        
+        // WAŻNE: jti to identyfikator tokenu, nie użytkownika
+        // Znajdź claim NameIdentifier, który zawiera UUID (a nie email)
+        var userIdClaims = User.Claims
+            .Where(c => 
+                (c.Type == ClaimTypes.NameIdentifier || 
+                 c.Type == NameIdentifierClaimUri) &&
+                !c.Value.Contains('@') && // Nie wybieraj emaila
+                c.Value.Contains('-')  // Szukaj formatów UUID
+            )
+            .ToList();
+            
+        if (userIdClaims.Any())
+        {
+            var userId = userIdClaims.First().Value;
+            Console.WriteLine($"Using user UUID: {userId}");
+            return userId;
+        }
+        
+        // Jeśli nie znaleziono odpowiedniego NameIdentifier, szukaj innych claimów, które mogą zawierać ID
+        var fallbackClaims = User.Claims
+            .Where(c => 
+                !c.Value.Contains('@') && 
+                c.Value.Contains('-') &&
+                c.Value.Length > 20 &&
+                c.Type != "jti" && // NIE używaj jti (identyfikatora tokenu)
+                (c.Type.EndsWith("id") || c.Type.Contains("userid"))
+            )
+            .ToList();
+            
+        if (fallbackClaims.Any())
+        {
+            var userId = fallbackClaims.First().Value;
+            Console.WriteLine($"Using fallback ID: {userId}");
+            return userId;
+        }
+        
+        // Ostateczna próba - użyj standardowej metody, ale ostrzeż jeśli to email
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
         if (userIdClaim == null)
         {
             userIdClaim = User.FindFirst(NameIdentifierClaimUri);
         }
+        
+        if (userIdClaim?.Value?.Contains('@') == true)
+        {
+            Console.WriteLine($"WARNING: Using email as ID: {userIdClaim.Value}");
+        }
+        else
+        {
+            Console.WriteLine($"Using standard ID: {userIdClaim?.Value}");
+        }
+        
         return userIdClaim?.Value;
     }
 }

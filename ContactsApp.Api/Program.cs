@@ -14,6 +14,20 @@ using System.Security.Claims;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
+// Usuwamy sztywny URL, aby mozna było go zmienić przez argumenty
+// builder.WebHost.UseUrls("http://localhost:5000");
+
+// Dodanie CORS - bardzo permisywna konfiguracja z nazwą polityki
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .WithExposedHeaders("Authorization");
+    });
+});
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -49,23 +63,13 @@ builder.Services.AddAuthentication(options =>
     {
         options.IncludeErrorDetails = true;
         
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? 
-                throw new InvalidOperationException("JWT key is missing"))),
-            ClockSkew = TimeSpan.Zero,
-            NameClaimType = ClaimTypes.NameIdentifier
-        };
-        
+        // Ważne dla CORS - nie wymaga autentykacji dla OPTIONS (preflight request)
         options.Events = new JwtBearerEvents
         {
+            OnMessageReceived = context =>
+            {
+                return Task.CompletedTask;
+            },
             OnTokenValidated = context => 
             {                
                 if (context.Principal?.Identity is ClaimsIdentity identity)
@@ -90,11 +94,22 @@ builder.Services.AddAuthentication(options =>
             OnChallenge = context => 
             {
                 return Task.CompletedTask;
-            },
-            OnMessageReceived = context => 
-            {
-                return Task.CompletedTask;
             }
+        };
+        
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? 
+                throw new InvalidOperationException("JWT key is missing"))),
+            ClockSkew = TimeSpan.Zero,
+            NameClaimType = ClaimTypes.NameIdentifier
         };
     });
 
@@ -149,10 +164,21 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// WAŻNE: CORS MUSI być przed jakimkolwiek routingiem i autoryzacją
+// Użycie nazwane polityki CORS
+app.UseCors("AllowAll");
 
 // Dodaj middleware do logowania żądań
 app.Use(async (context, next) =>
 {
+    // Obsługa preflight OPTIONS bez przechodzenia dalej do middleware'u
+    if (context.Request.Method == "OPTIONS")
+    {
+        context.Response.StatusCode = 200;
+        await context.Response.CompleteAsync();
+        return;
+    }
+    
     await next();
 });
 

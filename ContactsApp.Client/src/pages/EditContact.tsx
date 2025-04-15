@@ -3,8 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getContactById, updateContact } from '../api/api';
 import { Contact, ContactUpdateDto, Category, Subcategory } from '../types';
 import axios from 'axios';
+import { CATEGORIES, BUSINESS_SUBCATEGORIES, getSubcategoriesForCategory } from '../constants/categories';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'http://localhost:5001/api';
 
 const EditContact: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -25,13 +26,8 @@ const EditContact: React.FC = () => {
       try {
         setLoading(true);
         
-        // Fetch contact, categories, and subcategories in parallel
-        const [contactResponse, categoriesResponse, subcategoriesResponse] = await Promise.all([
-          getContactById(parseInt(id)),
-          axios.get(`${API_URL}/category`),
-          axios.get(`${API_URL}/subcategory`)
-        ]);
-        
+        // Fetch contact data
+        const contactResponse = await getContactById(parseInt(id));
         const contactData = contactResponse.data;
         setContact(contactData);
         
@@ -46,14 +42,14 @@ const EditContact: React.FC = () => {
           subcategoryId: contactData.subcategoryId
         });
         
-        setCategories(categoriesResponse.data);
-        setSubcategories(subcategoriesResponse.data);
+        // Użyj stałych kategorii zamiast pobierania z API
+        setCategories(CATEGORIES);
         
-        // Filter subcategories for the current category
-        const filteredSubs = subcategoriesResponse.data.filter(
-          (sub: Subcategory) => sub.categoryId === contactData.categoryId
-        );
+        // Pobierz podkategorie dla wybranej kategorii
+        const filteredSubs = getSubcategoriesForCategory(contactData.categoryId);
         setFilteredSubcategories(filteredSubs);
+        setSubcategories(BUSINESS_SUBCATEGORIES);
+        
       } catch (err) {
         console.error('Error fetching data:', err);
         setError('Failed to load contact data. Please try again later.');
@@ -138,8 +134,8 @@ const EditContact: React.FC = () => {
         ...formData
       };
       
-      // For "Other" category with custom subcategory
-      const otherCategoryId = categories.find(c => c.name === 'Other')?.id;
+      // For "Inny" category with custom subcategory
+      const otherCategoryId = CATEGORIES.find(c => c.name === 'Inny')?.id;
       if (formData.categoryId === otherCategoryId && formData.customSubcategory) {
         // Handle custom subcategory logic
         // This would normally require backend support to create/update a custom subcategory
@@ -169,12 +165,12 @@ const EditContact: React.FC = () => {
 
   const getCategoryName = (id: number | undefined) => {
     if (!id) return '';
-    const category = categories.find(c => c.id === id);
+    const category = CATEGORIES.find(c => c.id === id);
     return category ? category.name : '';
   };
 
-  const isOtherCategory = getCategoryName(formData.categoryId) === 'Other';
-  const isBusinessCategory = getCategoryName(formData.categoryId) === 'Business';
+  const isOtherCategory = getCategoryName(formData.categoryId) === 'Inny';
+  const isBusinessCategory = getCategoryName(formData.categoryId) === 'Służbowy';
 
   return (
     <div style={containerStyle}>
@@ -258,7 +254,7 @@ const EditContact: React.FC = () => {
             required
           >
             <option value="">Select Category</option>
-            {categories.map(category => (
+            {CATEGORIES.map(category => (
               <option key={category.id} value={category.id}>
                 {category.name}
               </option>

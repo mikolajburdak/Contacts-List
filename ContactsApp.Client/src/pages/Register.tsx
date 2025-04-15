@@ -7,7 +7,8 @@ const Register: React.FC = () => {
   const [formData, setFormData] = useState<RegisterFormData>({
     username: '',
     email: '',
-    password: ''
+    password: '',
+    fullName: ''
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -26,7 +27,7 @@ const Register: React.FC = () => {
     setError(null);
     
     // Form validation
-    if (!formData.username || !formData.email || !formData.password) {
+    if (!formData.username || !formData.email || !formData.password || !formData.fullName) {
       setError('All fields are required');
       return;
     }
@@ -46,7 +47,7 @@ const Register: React.FC = () => {
     } catch (err: any) {
       const errorMessage = 
         err.response?.data?.message || 
-        err.response?.data?.errors?.join(', ') || 
+        (Array.isArray(err.response?.data?.errors) ? err.response?.data?.errors.join(', ') : String(err.response?.data?.errors || '')) || 
         'Registration failed. Please try again.';
       setError(errorMessage);
     } finally {
@@ -61,6 +62,19 @@ const Register: React.FC = () => {
       {error && <div style={errorStyle}>{error}</div>}
       
       <form onSubmit={handleSubmit} style={formStyle}>
+        <div style={fieldStyle}>
+          <label htmlFor="fullName" style={labelStyle}>Full Name</label>
+          <input
+            type="text"
+            id="fullName"
+            name="fullName"
+            value={formData.fullName}
+            onChange={handleChange}
+            style={inputStyle}
+            required
+          />
+        </div>
+
         <div style={fieldStyle}>
           <label htmlFor="username" style={labelStyle}>Username</label>
           <input

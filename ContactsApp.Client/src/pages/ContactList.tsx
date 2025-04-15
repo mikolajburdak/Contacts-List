@@ -13,11 +13,41 @@ const ContactList: React.FC = () => {
       try {
         setLoading(true);
         const response = await getAllContacts();
-        setContacts(response.data);
+        console.log('API response:', response.data);
+        
+        // Sprawdzamy strukturę odpowiedzi i odpowiednio ją przetwarzamy
+        if (response.data) {
+          // Obsługa formatu z $values (generowany przez ReferenceHandler.Preserve)
+          if (response.data.$values && Array.isArray(response.data.$values)) {
+            console.log('Found $values array, using it');
+            setContacts(response.data.$values);
+          }
+          // Jeśli data jest tablicą, użyj ją bezpośrednio
+          else if (Array.isArray(response.data)) {
+            setContacts(response.data);
+          } 
+          // Jeśli data zawiera właściwość 'items' lub podobną tablicę
+          else if (response.data.items && Array.isArray(response.data.items)) {
+            setContacts(response.data.items);
+          }
+          // Jeśli data nie jest tablicą, ale pojedynczym obiektem, umieść go w tablicy
+          else if (typeof response.data === 'object') {
+            console.log('Received data structure:', response.data);
+            // Dla debugowania, wypisz strukturę danych
+            setContacts(Array.isArray(response.data) ? response.data : []);
+          } else {
+            // W najgorszym przypadku, użyj pustej tablicy
+            setContacts([]);
+            console.error('Unexpected data structure:', response.data);
+          }
+        } else {
+          setContacts([]);
+        }
         setError(null);
       } catch (err) {
         setError('Failed to load contacts. Please try again later.');
         console.error('Error fetching contacts:', err);
+        setContacts([]);
       } finally {
         setLoading(false);
       }
@@ -38,7 +68,7 @@ const ContactList: React.FC = () => {
     <div style={containerStyle}>
       <h1 style={headerStyle}>Contacts</h1>
       
-      {contacts.length === 0 ? (
+      {!Array.isArray(contacts) || contacts.length === 0 ? (
         <p>No contacts found.</p>
       ) : (
         <div style={listStyle}>

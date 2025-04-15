@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ContactsApp.Api.Models
 {
@@ -22,7 +23,9 @@ namespace ContactsApp.Api.Models
 
         public DateTime BirthDate { get; set; }
         
-        public DateTime CreatedAt { get; set; }
+        // Pole nie jest mapowane do bazy danych
+        [NotMapped]
+        public DateTime? CreatedAt { get; set; }
 
         [Required]
         public int CategoryId { get; set; }

@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createContact } from '../api/api';
-import { ContactCreateDto, Category, Subcategory } from '../types';
-import axios from 'axios';
-
-const API_URL = 'http://localhost:5000/api';
+import { ContactCreateDto } from '../types';
+import { CATEGORIES, BUSINESS_SUBCATEGORIES, getSubcategoriesForCategory } from '../constants/categories';
 
 const AddContact: React.FC = () => {
   const [formData, setFormData] = useState<ContactCreateDto>({
@@ -18,52 +16,29 @@ const AddContact: React.FC = () => {
     customSubcategory: ''
   });
   
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
-  const [filteredSubcategories, setFilteredSubcategories] = useState<Subcategory[]>([]);
+  const [filteredSubcategories, setFilteredSubcategories] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const navigate = useNavigate();
 
-  // Fetch categories and subcategories
+  // Set default category when component mounts
   useEffect(() => {
-    const fetchCategoriesAndSubcategories = async () => {
-      try {
-        const [categoriesResponse, subcategoriesResponse] = await Promise.all([
-          axios.get(`${API_URL}/category`),
-          axios.get(`${API_URL}/subcategory`)
-        ]);
-        
-        setCategories(categoriesResponse.data);
-        setSubcategories(subcategoriesResponse.data);
-        
-        // Set default category if available
-        if (categoriesResponse.data.length > 0) {
-          setFormData(prev => ({
-            ...prev,
-            categoryId: categoriesResponse.data[0].id
-          }));
-          
-          // Filter subcategories for the default category
-          const filteredSubs = subcategoriesResponse.data.filter(
-            (sub: Subcategory) => sub.categoryId === categoriesResponse.data[0].id
-          );
-          setFilteredSubcategories(filteredSubs);
-        }
-      } catch (err) {
-        console.error('Error fetching categories:', err);
-        setError('Failed to load categories. Please try again later.');
-      }
-    };
-    
-    fetchCategoriesAndSubcategories();
+    if (CATEGORIES.length > 0) {
+      setFormData(prev => ({
+        ...prev,
+        categoryId: CATEGORIES[0].id
+      }));
+      
+      // Load subcategories for the default category
+      setFilteredSubcategories(getSubcategoriesForCategory(CATEGORIES[0].id));
+    }
   }, []);
 
-  // Filter subcategories when category changes
+  // Update subcategories when category changes
   useEffect(() => {
     if (formData.categoryId) {
-      const filtered = subcategories.filter(sub => sub.categoryId === formData.categoryId);
-      setFilteredSubcategories(filtered);
+      const subcats = getSubcategoriesForCategory(formData.categoryId);
+      setFilteredSubcategories(subcats);
       
       // Reset subcategory when category changes
       setFormData(prev => ({
@@ -72,7 +47,7 @@ const AddContact: React.FC = () => {
         customSubcategory: ''
       }));
     }
-  }, [formData.categoryId, subcategories]);
+  }, [formData.categoryId]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -116,20 +91,7 @@ const AddContact: React.FC = () => {
     
     try {
       setLoading(true);
-      
-      // Create data to send
-      const dataToSend = {
-        ...formData
-      };
-      
-      // For "Other" category with custom subcategory
-      const otherCategoryId = categories.find(c => c.name === 'Other')?.id;
-      if (formData.categoryId === otherCategoryId && formData.customSubcategory) {
-        // Handle custom subcategory logic
-        // This would normally require backend support to create a new subcategory
-      }
-      
-      await createContact(dataToSend);
+      await createContact(formData);
       navigate('/');
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || 'Failed to create contact. Please try again.';
@@ -139,17 +101,11 @@ const AddContact: React.FC = () => {
     }
   };
 
-  if (error && error.includes('Failed to load categories')) {
-    return <div style={errorStyle}>{error}</div>;
-  }
-
-  const getCategoryName = (id: number) => {
-    const category = categories.find(c => c.id === id);
-    return category ? category.name : '';
-  };
-
-  const isOtherCategory = getCategoryName(formData.categoryId) === 'Other';
-  const isBusinessCategory = getCategoryName(formData.categoryId) === 'Business';
+  // Helper function to check if current category is "Służbowy"
+  const isBusinessCategory = formData.categoryId === 1; // ID 1 is "Służbowy"
+  
+  // Helper function to check if current category is "Inny"
+  const isOtherCategory = formData.categoryId === 3; // ID 3 is "Inny"
 
   return (
     <div style={containerStyle}>
@@ -233,7 +189,7 @@ const AddContact: React.FC = () => {
             required
           >
             <option value="">Select Category</option>
-            {categories.map(category => (
+            {CATEGORIES.map(category => (
               <option key={category.id} value={category.id}>
                 {category.name}
               </option>
